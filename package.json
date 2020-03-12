@@ -1,0 +1,22 @@
+{
+  "name": "webgl-lessons",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "start": "parcel ./exercices/*/*.html",
+    "clean": "rm dist/bundle.js",
+    "build": "parcel build *.html"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.8.7",
+    "@babel/preset-env": "^7.8.7",
+    "parcel-bundler": "^1.12.4",
+    "sass": "^1.26.3"
+  }
+}

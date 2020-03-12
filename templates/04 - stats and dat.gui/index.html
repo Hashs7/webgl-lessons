@@ -1,0 +1,143 @@
+<!DOCTYPE HTML>
+
+<html>
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+        <meta name="author" content="Yann Gilquin">
+        <meta name="description" content="Formation WebGL - Stats & GUI Template">
+
+        <title>Stats & GUI Template</title>
+
+        <style>
+            html, body {
+                background-color: #202020;
+                margin: 0px;
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+            }
+
+            canvas {
+                width: 400px;
+                height: 400px;
+                touch-action: none;
+            }
+        </style>
+
+        <script type="text/javascript" src="../../lib/webgl-utils.js"></script>
+        <script type="text/javascript" src="../../lib/dat.gui.js"></script>
+        <script type="text/javascript" src="../../lib/stats.js"></script>
+
+    </head>
+
+    <body>
+        <canvas id="canvas" width="400" height="400"></canvas>
+
+        <script>
+            /*
+             * Graphical User Interface params function
+             * Define params to control any runtime property
+             */
+            var GUIParams = function() {
+                this.message = 'dat.gui';
+                this.value = 7;
+                this.property = false;
+                this.action = function() {
+                    console.log("dat.gui action...")
+                };
+            };
+
+            /*
+             * Create GUI and params instances
+             * Setup the interface with property association
+             */
+            var params = new GUIParams();
+            var gui = new dat.GUI();
+
+            gui.add(params, 'message');
+            gui.add(params, 'value', 0, 10);
+            gui.add(params, 'property');
+            gui.add(params, 'action');
+
+            /*
+             * Create stats monitoring object and append it to DOM
+             */
+            var stats = new Stats();
+            document.body.appendChild( stats.dom );
+
+            /*
+             * Get WebGL rendering context
+             */
+            var canvas = document.getElementById("canvas");
+            var gl = WebGLUtils.setupWebGL(canvas);
+
+            /*
+             * Init function
+             * Setup globals, create instances and load ressources (sync/async)
+             * Actions will end up with the onInitDone callback
+             */
+            function init()
+            {
+                console.log("Init ...");
+
+                // Setup and resources loading ...
+
+                // call init done callback async for lesson purpose, should be called once everything is ready
+                window.setTimeout(onInitDone, 0);
+            }
+
+            /*
+             * Init done callback
+             * Everything is ready, start animation
+             */
+            function onInitDone()
+            {
+                console.log("Init done, start animation");
+                animate();
+            }
+
+            /*
+             * Animation routine
+             * Called once per frame
+             *
+             * Schedule next frame
+             * Update the current state
+             * Call render routine
+             * Measure and display rendering stats
+             */
+            function animate()
+            {
+                // Schedule next frame
+                window.requestAnimationFrame(animate);
+
+                stats.begin();
+
+                // Update current state
+                // ...
+
+                // Render
+                render();
+
+                stats.end();
+            }
+
+            /*
+             * Render routine
+             * Invoke draw calls
+             */
+            function render()
+            {
+                // ...
+            }
+
+            init();
+
+        </script>
+
+    </body>
+
+</html>
+

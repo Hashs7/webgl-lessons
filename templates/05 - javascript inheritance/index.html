@@ -1,0 +1,73 @@
+<!DOCTYPE HTML>
+
+<html>
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+        <meta name="author" content="Yann Gilquin">
+        <meta name="description" content="Formation WebGL - JS inheritance template">
+
+        <title>JS inheritance template</title>
+
+        <style>
+            html, body {
+                background-color: #202020;
+                margin: 0px;
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+            }
+
+            canvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+        </style>
+
+    </head>
+
+    <body>
+        <script>
+
+        Class = function(param)
+        {
+            this.param = param;
+        };
+        Class.prototype.constructor = Class;
+
+        Class.prototype.method = function()
+        {
+            console.log("Class method");
+        };
+
+        Subclass = function(param, subParam)
+        {
+            this.subParam = subParam;
+            Class.call(this, param);
+        };
+
+        Subclass.prototype = Object.create(Class.prototype);
+        Subclass.prototype.constructor = Subclass;
+
+        Subclass.prototype.method = function()
+        {
+            Class.prototype.method.call(this);
+            console.log("Subclass method");
+        };
+
+
+        var instance = new Subclass("my param", "my subparam");
+        console.log(instance.param);
+        console.log(instance.subParam);
+
+        instance.method();
+
+        </script>
+
+    </body>
+
+</html>
+
