@@ -7,7 +7,7 @@
     "lib": "lib"
   },
   "scripts": {
-    "start": "parcel ./exercices/2.draw-triangle/*.html",
+    "start": "parcel ./exercices/**/*.html",
     "clean": "rm -rf dist",
     "build": "parcel build *.html"
   },

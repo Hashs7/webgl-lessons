@@ -53,7 +53,7 @@ function render() {
     const color = position.x < 0 ? [1.0, 0.0, 0.0] : [0.0, 0.0, 1.0];
     gl.vertexAttrib3fv(aPosition, floatArray);
     gl.vertexAttrib1f(aPointSize, size);
-    // gl.uniform3fv(uColor, color);
+    gl.uniform3fv(uColor, color);
     gl.drawArrays(gl.POINTS, 0, 1);
   });
 }
