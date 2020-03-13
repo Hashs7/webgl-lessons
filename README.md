@@ -5,7 +5,7 @@
 First install dependencies:
 
 ```sh
-npm install
+npm i
 ```
 
 To run in hot module reloading mode:

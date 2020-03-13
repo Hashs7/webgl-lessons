@@ -1,5 +1,6 @@
 import { setupWebGL } from '../../lib/webgl-utils';
 import { initShaders } from '../../lib/webgl-shader-utils';
+import { randomNumber } from "../../utils";
 import './style.scss';
 
 const canvas = document.getElementById("canvas");
@@ -10,7 +11,7 @@ let VERTEX_SHADER = `
 
   void main() {
     gl_Position = vec4(aPosition);
-    gl_PointSize = 10.0;
+    gl_PointSize = aPointSize;
   }
 `;
 let FRAGMENT_SHADER = `
@@ -21,24 +22,39 @@ let FRAGMENT_SHADER = `
     gl_FragColor = vec4(uColor, 1.0);
   }
 `;
+
 initShaders(gl, VERTEX_SHADER, FRAGMENT_SHADER);
 
 let aPosition = gl.getAttribLocation(gl.program, 'aPosition');
 let aPointSize = gl.getAttribLocation(gl.program, 'aPointSize');
 let uColor = gl.getUniformLocation(gl.program, 'uColor');
 
-function drawPoint(e) {
-  const mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-  const mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
-  console.log({ mouseX, mouseY });
+let POINTS_POSITION = [];
 
-  const floatArray = new Float32Array([mouseX, mouseY, 0.0]);
-  let color = mouseX < 0 ? [1.0, 0.0, 0.0] : [0.0, 0.0, 1.0];
-  gl.vertexAttrib3fv(aPosition, floatArray);
-  gl.uniform3fv(uColor, color);
-  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+function drawPoint(e) {
+  const x = (e.clientX / window.innerWidth) * 2 - 1;
+  const y = -(e.clientY / window.innerHeight) * 2 + 1;
+  const size = randomNumber(5, 50);
+  POINTS_POSITION.push({ position : { x, y }, size });
+  // gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  // gl.clear(gl.COLOR_BUFFER_BIT);
+}
+
+function animate() {
   gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.POINTS, 0, 1)
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  POINTS_POSITION = POINTS_POSITION.filter(point => point.size > 0.1);
+  POINTS_POSITION = POINTS_POSITION.map(({ position, size }) => {
+    const floatArray = new Float32Array([position.x, position.y, 0.0]);
+    const color = position.x < 0 ? [1.0, 0.0, 0.0] : [0.0, 0.0, 1.0];
+    gl.vertexAttrib3fv(aPosition, floatArray);
+    size -= 0.2;
+    gl.vertexAttrib1f(aPointSize, size);
+    gl.uniform3fv(uColor, color);
+    gl.drawArrays(gl.POINTS, 0, 1);
+    return { position, size };
+  });
+  requestAnimationFrame(animate);
 }
 
 function resize() {
@@ -46,15 +62,17 @@ function resize() {
   canvas.height = window.innerHeight;
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.POINTS, 0, 1)
+  gl.drawArrays(gl.POINTS, 0, 1);
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 }
 
-gl.clearColor(1.0, 0.0, 0.0, 1.0);
+gl.clearColor(0.0, 0.0, 0.0, 1.0);
 gl.clear(gl.COLOR_BUFFER_BIT);
 gl.drawArrays(gl.POINTS, 0, 1);
+
 resize();
+animate();
 window.addEventListener('resize', resize);
-window.addEventListener('click', drawPoint);
+window.addEventListener('mousemove', drawPoint);
 
 
