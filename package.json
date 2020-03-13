@@ -7,8 +7,8 @@
     "lib": "lib"
   },
   "scripts": {
-    "start": "parcel ./exercices/*/*.html",
-    "clean": "rm dist/bundle.js",
+    "start": "parcel ./exercices/2.draw-triangle/*.html",
+    "clean": "rm -rf dist",
     "build": "parcel build *.html"
   },
   "author": "",
