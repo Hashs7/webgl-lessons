@@ -18,9 +18,10 @@ let VERTEX_SHADER = `
 let FRAGMENT_SHADER = `
   precision mediump float;
   varying vec3 vColor;
+  uniform float intensity;
 
   void main(void) {
-    gl_FragColor = vec4(vColor, 1);
+    gl_FragColor = vec4(vColor.rg, intensity, 0.1);
   }
 `;
 
@@ -28,6 +29,7 @@ initShaders(gl, VERTEX_SHADER, FRAGMENT_SHADER);
 
 const coord = gl.getAttribLocation(gl.program, 'coordinates');
 const aColor = gl.getAttribLocation(gl.program, 'aColor');
+const intensity = gl.getUniformLocation(gl.program, 'intensity');
 
 function initTriangle() {
   const vertices = [
@@ -53,6 +55,11 @@ function initTriangle() {
 }
 
 function animate() {
+  const phase = ((Date.now() / 1000) % 4) / 4;
+  const intVal = 0.5 + 0.5 * Math.sin(2 * Math.PI * phase);
+  console.log(intVal);
+
+  gl.uniform1f(intensity, intVal);
   render();
   requestAnimationFrame(animate);
 }
