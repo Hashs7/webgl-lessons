@@ -18,5 +18,9 @@
     "@babel/preset-env": "^7.8.7",
     "parcel-bundler": "^1.12.4",
     "sass": "^1.26.3"
+  },
+  "dependencies": {
+    "dat.gui": "^0.7.6",
+    "stats.js": "^0.17.0"
   }
 }

@@ -1,73 +1,107 @@
 import { setupWebGL } from '../../lib/webgl-utils';
 import { initShaders } from '../../lib/webgl-shader-utils';
+import dat from 'dat.gui';
 import './style.scss';
 
 const canvas = document.getElementById("canvas");
 const gl = setupWebGL(canvas);
-let VERTEX_SHADER = `
-  precision mediump float;
-  attribute vec2 coordinates;
-  attribute vec3 aColor;
-  varying vec3 vColor;
 
-  void main(void) {
-     gl_Position = vec4(coordinates, 0.0, 1.0);
-     vColor = aColor;
-  }
+let VERTEX_SHADER = `
+    attribute vec2 aPosition;
+    void main() {
+       gl_Position = vec4(aPosition, 0.0, 1.0);
+    }
 `;
 let FRAGMENT_SHADER = `
-  precision mediump float;
-  varying vec3 vColor;
-  uniform float intensity;
-
-  void main(void) {
-    gl_FragColor = vec4(1.0, 0.0, 0.0, 0.1);
-  }
+    precision mediump float;
+    void main()
+    {
+       gl_FragColor = vec4(1.0, 0.2, 0.0, 1.0);
+    }
 `;
 
+
+const onParamChange = () => {
+  setupGeometry();
+  render();
+};
+
+const gui = new dat.GUI();
+const GUIParams = function() {
+  this.sides = 6;
+  this.radius = 1.0;
+};
+
+let params = new GUIParams();
+gui.add(params, 'sides', 3, 50, 1).onChange(onParamChange);
+gui.add(params, 'radius', 0, 1, 0.05).onChange(onParamChange);
+
+let nIndices = 6;
+let radius = 1;
+let vertices;
+let indices;
+
+/*
+ * Get WebGL rendering context
+ */
+function computePolygonGeometry() {
+  vertices = [0, 0];
+  indices = [];
+  const deg = 360 / nIndices;
+  for (let i = 0; i < nIndices; i++) {
+    const rad = ((deg * i) / 180) * Math.PI;
+
+    vertices.push(
+      Math.cos(rad) * radius,
+      Math.sin(rad) * radius
+    );
+    indices.push(0, i + 1, i !== nIndices - 1 ? i + 2 : 1);
+  }
+}
+
 initShaders(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+const aPosition = gl.getAttribLocation(gl.program, 'aPosition');
 
-const coord = gl.getAttribLocation(gl.program, 'coordinates');
-const intensity = gl.getUniformLocation(gl.program, 'intensity');
+function setupGeometry() {
+  nIndices = params.sides;
+  radius = params.radius;
+  computePolygonGeometry();
 
-function initSquare() {
-  const vertices = [
-    0.5, 0.5,
-    -0.5, 0.5,
-    -0.5, -0.5,
-    0.5, -0.5,
-  ];
+  // Clear previous buffers with
+  // gl.bindBuffer(..., null);
+  // gl.deleteBuffer();
+
+  // Create new buffers (gl.ARRAY_BUFFER and gl.ELEMENT_ARRAY_BUFFER) and bind them
 
   const buffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-  gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(coord);
+  gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(aPosition);
 
-  const indices = new Uint8Array([
-    0, 2, 1,
-    0, 3, 2,
-  ]);
-  const indexBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-
-  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
+  const bufferIndices = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferIndices);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indices), gl.STATIC_DRAW);
 }
 
-function animate() {
-  const phase = ((Date.now() / 1000) % 4) / 4;
-  const intVal = 0.5 + 0.5 * Math.sin(2 * Math.PI * phase);
-
-  gl.uniform1f(intensity, intVal);
+/*
+ * Init function
+ * Setup globals, create instances and load ressources (sync/async)
+ * Actions will end up with the onInitDone callback
+ */
+function init() {
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  setupGeometry();
   render();
-  requestAnimationFrame(animate);
 }
 
+/*
+ * Render routine
+ * Invoke draw calls
+ */
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.clearColor(0.0, 0.0, 0.0, 1.0);
-  initSquare();
+  gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_BYTE, 0);
 }
 
 function resize() {
@@ -77,7 +111,6 @@ function resize() {
 }
 
 resize();
-animate();
-initSquare();
+init();
 
 window.addEventListener('resize', resize);
