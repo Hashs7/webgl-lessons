@@ -1,6 +1,7 @@
 import { setupWebGL } from '../../lib/webgl-utils';
 import { initShaders } from '../../lib/webgl-shader-utils';
 import dat from 'dat.gui';
+import Stats from 'stats.js';
 import './style.scss';
 
 const canvas = document.getElementById("canvas");
@@ -40,6 +41,7 @@ let nIndices = 6;
 let radius = 1;
 let vertices;
 let indices;
+let vertexBuffer;
 
 /*
  * Get WebGL rendering context
@@ -67,14 +69,13 @@ function setupGeometry() {
   radius = params.radius;
   computePolygonGeometry();
 
-  // Clear previous buffers with
-  // gl.bindBuffer(..., null);
-  // gl.deleteBuffer();
+  if (vertexBuffer !== null) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.deleteBuffer(vertexBuffer);
+  }
 
-  // Create new buffers (gl.ARRAY_BUFFER and gl.ELEMENT_ARRAY_BUFFER) and bind them
-
-  const buffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
   gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(aPosition);
@@ -104,6 +105,18 @@ function render() {
   gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_BYTE, 0);
 }
 
+const stats = new Stats();
+stats.showPanel(1);
+document.body.appendChild(stats.dom);
+
+function animate() {
+  stats.begin();
+  // monitored code goes here
+  stats.end();
+  requestAnimationFrame( animate );
+}
+
+
 function resize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -112,5 +125,6 @@ function resize() {
 
 resize();
 init();
+animate();
 
 window.addEventListener('resize', resize);
