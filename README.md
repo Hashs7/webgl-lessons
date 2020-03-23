@@ -8,8 +8,9 @@ First install dependencies:
 npm i
 ```
 
-To run in hot module reloading mode:
-
+To run in hot module reloading mode : <br/>
+See in live at 
+http://localhost:1234/exo1/points-clicker.html
 ```sh
 npm start
 ```
