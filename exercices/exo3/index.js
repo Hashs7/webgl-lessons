@@ -42,6 +42,7 @@ let radius = 1;
 let vertices;
 let indices;
 let vertexBuffer;
+let indicesBuffer;
 
 /*
  * Get WebGL rendering context
@@ -73,6 +74,10 @@ function setupGeometry() {
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     gl.deleteBuffer(vertexBuffer);
   }
+  if (indicesBuffer !== null) {
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    gl.deleteBuffer(indicesBuffer);
+  }
 
   vertexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
@@ -80,8 +85,8 @@ function setupGeometry() {
   gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(aPosition);
 
-  const bufferIndices = gl.createBuffer();
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferIndices);
+  indicesBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indices), gl.STATIC_DRAW);
 }
 
@@ -106,7 +111,7 @@ function render() {
 }
 
 const stats = new Stats();
-stats.showPanel(1);
+stats.showPanel(0);
 document.body.appendChild(stats.dom);
 
 function animate() {
