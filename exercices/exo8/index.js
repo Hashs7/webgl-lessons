@@ -1,5 +1,6 @@
 import { setupWebGL } from '../../lib/webgl-utils';
 import { initShaders } from '../../lib/webgl-shader-utils';
+import { Matrix4 } from '../../lib/cuon-matrix.js';
 import dat from 'dat.gui';
 import Stats from 'stats.js';
 import './style.scss';
@@ -8,6 +9,8 @@ const canvas = document.getElementById("canvas");
 const gl = setupWebGL(canvas);
 
 let uModelMatrix;
+
+const degreesToRad = (degrees) => degrees * Math.PI / 180;
 
 /*
  * Graphical User Interface params function
@@ -35,7 +38,7 @@ gui.add(params, 'rotation', 0, 360, 1);
 /*
  * Create stats monitoring object and append it to DOM
  */
-let stats = new Stats();
+const stats = new Stats();
 document.body.appendChild(stats.dom);
 
 
@@ -43,15 +46,14 @@ document.body.appendChild(stats.dom);
  * Create one buffer storing vertices positions and colors
  * Setup data for aPosition and aColor attributes with the buffer as source
  */
-function setupBuffersAndAttributes()
-{
+function setupBuffersAndAttributes() {
   // Setup vertices positions with a color
   // Compute positions for some equilateral triangle
   const h_2 = 0.5 * Math.sqrt(3) / 2;
 
   const vertices = new Float32Array([
     -0.5, -h_2, 1.0, 0.0, 0.0, // 1st vertex position and color
-    0.0,  h_2, 0.0, 1.0, 0.0, // 2nd vertex position and color
+    0.0, h_2, 0.0, 1.0, 0.0, // 2nd vertex position and color
     0.5, -h_2, 0.0, 0.0, 1.0  // 3rd vertex position and color
   ]);
 
@@ -79,9 +81,9 @@ function setupProgram() {
     varying vec3 vColor;
     
     void main() {
-    // gl_Position is the result of muliplying aPosition with the transform matrix
-    // ...
-       vColor = aColor;
+      // gl_Position is the result of muliplying aPosition with the transform matrix
+      gl_Position = uModelMatrix * aPosition; 
+      vColor = aColor;
     }
   `;
 
@@ -103,33 +105,39 @@ function setupProgram() {
  * Transform is defined as scaling, then rotation, then translation
  * Return matrix4
  */
-function getModelMatrix()
-{
+function getModelMatrix() {
   // Compute and return modelMatrix
 
-  // Create a matrix for each transformation: scaling, rotation, translation
-  //  var elements = new Float32Array([
-  //     a00, a10, a20, a30,
-  //     a01, a11, a21, a31,
-  //     a02, a12, a22, a32,
-  //     a03, a13, a23, a33
-  //  ]);
-  // var someMatrix = new Matrix4(elements);
-
-
-  // Create a scaling matrix
-  // ...
+  // Compute scale with
+  const scale = new Float32Array([
+    params.scale, 0, 0, 0,
+    0, params.scale, 0, 0,
+    0, 0, params.scale, 0,
+    0, 0, 0, 1
+  ]);
+  const matrixScale = new Matrix4(scale);
 
   // Compute rotation with
-  // ...
+  const rotation = degreesToRad(params.rotation);
+  const rotationZ = new Float32Array([
+    Math.cos(rotation), Math.sin(rotation), 0, 0,
+    -Math.sin(rotation), Math.cos(rotation), 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1
+  ]);
+  const matrixRotationZ = new Matrix4(rotationZ);
 
   // Compute translation with
   // ..
+  const translation = new Float32Array([
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    params.translateX, params.translateY, 0, 1
+  ]);
+  const matrixTranslation = new Matrix4(translation);
 
-
-  // Return the product of the 3 matrices with following syntax
-  // return matrixC.multiply(matrixB).multiply(matrixA);
-  // Remember: matrix product is not commutative
+  return matrixScale.multiply(matrixTranslation).multiply(matrixRotationZ);
 }
 
 /*
@@ -154,9 +162,7 @@ function init() {
  * Measure and display rendering stats
  */
 function animate() {
-  // Schedule next frame
   window.requestAnimationFrame(animate);
-
   stats.begin();
 
   // Get the up to date model matrix with the global transform (scaling + rotation + translation)
@@ -164,7 +170,6 @@ function animate() {
   gl.uniformMatrix4fv(uModelMatrix, false, mModel.elements);
 
   render();
-
   stats.end();
 }
 
