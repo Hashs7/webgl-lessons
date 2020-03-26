@@ -93,7 +93,7 @@ function setupProgram() {
     void main() {
       gl_FragColor = vec4(vColor, 1.0);
     }
-    `;
+  `;
 
   initShaders(gl, VERTEX_SHADER, FRAGMENT_SHADER);
 

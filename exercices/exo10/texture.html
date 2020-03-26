@@ -1,0 +1,266 @@
+<!doctype html>
+
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+  <meta name="author" content="Yann Gilquin">
+  <meta name="description" content="Formation WebGL - Texture mipmapping">
+
+  <title>Texture mipmapping</title>
+
+  <style>
+    html, body {
+      background-color: #202020;
+      margin: 0px;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+
+    canvas {
+      width: 400px;
+      height: 400px;
+      margin: 50px;
+      touch-action: none;
+    }
+  </style>
+
+  <script src="../../lib/webgl-utils.js" type="text/javascript"></script>
+  <script src="../../lib/webgl-shader-utils.js" type="text/javascript"></script>
+  <script type="text/javascript" src="../lib/cuon-matrix.js"></script>
+</head>
+
+<body>
+<canvas id="canvas" width="400" height="400"></canvas>
+
+<script>
+  /*
+   * Globals
+   */
+  var canvas = document.getElementById("canvas");
+  var gl = WebGLUtils.setupWebGL(canvas);
+
+  const PERIOD = 10;
+  var angle, nIndices, uModelMatrix, image;
+
+  /*
+   * Get model matrix
+   * Model matrix is the combining of scaling  rotation and translation
+   * Return matrix4
+   */
+  function getModelMatrix()
+  {
+    var model = new Matrix4();
+    model.rotate(45 * Math.sin(angle * Math.PI / 180.0), 1, 1, 0);
+    return model;
+  }
+
+  /*
+   * Check if a number is a power of two
+   */
+  function isPowerOfTwo(x)
+  {
+    return (Math.log(x) / Math.log(2)) % 1 === 0;
+  }
+
+  /*
+   * Setup the texture
+   */
+  function setupTexture()
+  {
+    var texture = gl.createTexture();
+
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+
+    if (isPowerOfTwo(image.width) && isPowerOfTwo(image.height))
+    {
+      console.log("Texture is power of two, generate mipmap");
+      gl.generateMipmap(gl.TEXTURE_2D);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+    }
+    else
+    {
+      console.log("Texture is not power of two, don't generate mipmap");
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+
+    var uSampler = gl.getUniformLocation(gl.program, "uSampler");
+    if (uSampler === null)
+    {
+      throw "Impossible to get uniform uSampler";
+    }
+    gl.uniform1i(uSampler, 0);
+  }
+
+  /*
+   * Create one buffer storing vertices positions and texture coordinates
+   * Setup data for aPosition and aTexCoord attributes in the same buffer
+   */
+  function setupBuffers()
+  {
+    // position x, y, texcoord u, v
+    var verticesAndTexCoords = new Float32Array([
+      -0.8, -0.8, 0.0,    0.0, 0.0,
+      0.8,  0.8, 0.0,    1.0, 1.0,
+      -0.8,  0.8, 0.0,    0.0, 1.0,
+
+      0.8,  0.8, 0.0,    1.0, 1.0,
+      -0.8, -0.8, 0.0,    0.0, 0.0,
+      0.8, -0.8, 0.0,    1.0, 0.0
+    ]);
+
+    var elementBytes = verticesAndTexCoords.BYTES_PER_ELEMENT;
+
+    var vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, verticesAndTexCoords, gl.STATIC_DRAW);
+
+    var aPosition = gl.getAttribLocation(gl.program, "aPosition");
+    if (aPosition < 0)
+    {
+      throw "Error while accessing attribute aPosition";
+    }
+
+    gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 5 * elementBytes, 0);
+    gl.enableVertexAttribArray(aPosition);
+
+    var aTexCoord = gl.getAttribLocation(gl.program, "aTexCoord");
+    if (aTexCoord < 0)
+    {
+      throw "Error while accessing attribute aTexCoord";
+    }
+
+    gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 5 * elementBytes, 3 * elementBytes);
+    gl.enableVertexAttribArray(aTexCoord);
+  }
+
+  /*
+   * Init function
+   * Setup globals, create instances and load ressources (sync/async)
+   */
+  function init()
+  {
+    console.log("Init ...");
+
+    var VERTEX_SHADER = WebGLShaderUtils.shaderArrayToString([
+      "attribute vec4 aPosition;",
+      "attribute vec2 aTexCoord;",
+      "varying vec2 vTexCoord;",
+      "uniform mat4 uModelMatrix;",
+      "",
+      "void main()",
+      "{",
+      "   gl_Position = uModelMatrix * aPosition;",
+      "   vTexCoord = aTexCoord;",
+      "}"
+    ]);
+
+    var FRAGMENT_SHADER = WebGLShaderUtils.shaderArrayToString([
+      "precision mediump float;",
+      "uniform sampler2D uSampler;",
+      "varying vec2 vTexCoord;",
+      "",
+      "void main()",
+      "{",
+      "   gl_FragColor = vec4(texture2D(uSampler, vTexCoord).rgb, 1.0);",
+      "}"
+    ]);
+
+    WebGLShaderUtils.initShaders(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    setupBuffers();
+
+    uModelMatrix = gl.getUniformLocation(gl.program, "uModelMatrix");
+    if (uModelMatrix === null)
+    {
+      throw "Error while accessing uniform uModelMatrix";
+    }
+
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+    image = new Image();
+
+    image.onload = function() {
+      console.log("image " + this.src + " load complete");
+      onInitDone(true);
+    };
+
+    image.onerror = function() {
+      console.log("image " + this.src + " load failed");
+      onInitDone(false);
+    };
+
+    image.src = "../assets/texture/wall-01.jpg";
+    image.src = "../assets/texture/wall-512x512.jpg";
+  }
+
+  /*
+   * Init done callback
+   * Everything is ready, start animation
+   */
+  function onInitDone(status)
+  {
+    if (!status)
+    {
+      console.log("Init failure. Abort...");
+      return;
+    }
+
+    console.log("Init done, start animation");
+
+    setupTexture();
+
+    animate();
+  }
+
+  /*
+   * Animation routine
+   * Called once per frame
+   *
+   * Schedule next frame
+   * Update the current state
+   * Call render routine
+   */
+  function animate()
+  {
+    // Schedule next frame
+    window.requestAnimationFrame(animate);
+
+    // Update phase for animation (ramp from 0 to 1 during PERIOD interval)
+    var phase = ((Date.now() / 1000) % PERIOD) / PERIOD;
+    angle = 360 * phase;
+
+    var mModel = getModelMatrix();
+    gl.uniformMatrix4fv(uModelMatrix, false, mModel.elements);
+
+    // Render
+    render();
+  }
+
+  /*
+   * Render routine
+   * Invoke draw calls
+   */
+  function render()
+  {
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+
+  init();
+
+</script>
+
+</body>
+
+</html>
